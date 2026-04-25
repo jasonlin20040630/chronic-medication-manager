@@ -130,6 +130,7 @@ function HomePage() {
     getStorageValue(STORAGE_KEYS.todayStatus, initialTodayStatus),
   );
   const [formData, setFormData] = useState(emptyForm);
+  const [selectedQuestion, setSelectedQuestion] = useState('');
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.plans, JSON.stringify(plans));
@@ -174,6 +175,42 @@ function HomePage() {
       adherenceRate,
     };
   }, [plans, todayStatus]);
+
+  const quickAnswerMap = useMemo(() => {
+    const unfinishedTasks = [];
+    plans.forEach((plan) => {
+      plan.scheduledTimes.forEach((time) => {
+        const status = todayStatus[`${plan.id}|${time}`] ?? 'pending';
+        if (status === 'pending') {
+          unfinishedTasks.push(`${plan.name}（${time}）`);
+        }
+      });
+    });
+
+    const lowStockPlans = plans
+      .map((plan) => {
+        const remainingDays = Math.floor(plan.stock / Math.max(Number(plan.pillsPerDay) || 1, 1));
+        return { ...plan, remainingDays };
+      })
+      .filter((plan) => plan.remainingDays <= 7);
+
+    const nextFollowUp = reminderTimeline.find((item) => item.type === 'followup')?.time || '请查看复诊安排';
+
+    return {
+      '我今天还有哪些药没吃？':
+        unfinishedTasks.length > 0
+          ? `今天仍未完成的用药任务有：${unfinishedTasks.join('、')}。请按既定处方时间完成记录。`
+          : '你今天计划内的用药任务都已完成或已标记跳过。请继续按医生处方执行后续计划。',
+      '哪些药快吃完了？':
+        lowStockPlans.length > 0
+          ? `当前库存偏低的药品有：${lowStockPlans
+              .map((plan) => `${plan.name}（约剩 ${Math.max(plan.remainingDays, 0)} 天）`)
+              .join('、')}。建议按现有处方提前安排续药。`
+          : '目前没有检测到 7 天内低库存的药品，请继续按当前计划记录库存变化。',
+      '下次复诊前我需要准备什么？': `下次复诊时间为 ${nextFollowUp}。建议准备近期用药打卡记录、库存情况与医生要求的检查资料，便于复诊时沟通。`,
+      '帮我总结本周用药情况': `本周演示数据中，今日任务共 ${metrics.totalTasks} 项，已服用 ${metrics.completed} 项，已跳过 ${metrics.skipped} 项，当前依从率约 ${metrics.adherenceRate}%。以上仅为记录汇总，不涉及诊断或处方调整建议。`,
+    };
+  }, [metrics, plans, todayStatus]);
 
   const updateTaskStatus = (planId, time, status) => {
     setTodayStatus((prev) => ({
@@ -222,6 +259,7 @@ function HomePage() {
     setPlans(initialPlans);
     setTodayStatus(initialTodayStatus);
     setFormData(emptyForm);
+    setSelectedQuestion('');
     setActiveTab('首页总览');
     localStorage.removeItem(STORAGE_KEYS.plans);
     localStorage.removeItem(STORAGE_KEYS.todayStatus);
@@ -420,12 +458,20 @@ function HomePage() {
                 <button
                   key={question}
                   type="button"
+                  onClick={() => setSelectedQuestion(question)}
                   className="rounded-xl border border-slate-300 bg-slate-50 p-4 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-100"
                 >
                   {question}
                 </button>
               ))}
             </div>
+
+            {selectedQuestion && (
+              <article className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-sm font-semibold text-slate-900">问题：{selectedQuestion}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-700">{quickAnswerMap[selectedQuestion]}</p>
+              </article>
+            )}
           </section>
         )}
       </div>
