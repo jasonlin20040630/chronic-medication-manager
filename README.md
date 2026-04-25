@@ -7,6 +7,7 @@
 - React 18
 - Vite 5
 - Tailwind CSS 3
+- localStorage（本地持久化）
 
 ## 本地启动
 
@@ -36,22 +37,35 @@ npm run build
 npm run preview
 ```
 
-## 当前页面结构
+## 当前功能（Demo）
 
 应用采用 React state 切换主内容区（不使用路由）：
 
 - 首页总览
   - 今日用药任务
   - 已完成任务
+  - 已跳过任务
   - 低库存预警
   - 下次复诊日期
-  - 本周依从率
+  - 本周依从率（基于今日记录估算）
 - 我的用药计划
-  - 多张药品计划卡片（药名、病种标签、剂量、频次、计划时间、库存、预计剩余天数、备注）
+  - 用药卡片
+  - 每个计划时间可标记：已服用 / 跳过
+  - 显示计划时间状态：未完成 / 已服用 / 已跳过
+  - 新增用药计划表单
 - 提醒中心
   - 用药提醒 / 补药提醒 / 复诊提醒时间轴
 - 智能小助手
   - 快捷问题面板
+
+## 本地持久化
+
+以下数据会保存在浏览器 localStorage：
+
+- 用药计划
+- 今日用药状态（按药品 id + 时间）
+
+页面底部提供“重置演示数据”按钮，便于评审恢复默认 mock 数据。
 
 ## 安全边界说明
 
@@ -70,6 +84,7 @@ npm run preview
     ├── index.css
     ├── main.jsx
     ├── components
+    │   ├── AddPlanForm.jsx
     │   ├── MedicationPlanCard.jsx
     │   ├── MetricCard.jsx
     │   ├── SectionNav.jsx
@@ -78,9 +93,11 @@ npm run preview
     │   └── mockData.js
     ├── pages
     │   └── HomePage.jsx
-    └── sections
-        ├── AssistantSection.jsx
-        ├── OverviewSection.jsx
-        ├── PlansSection.jsx
-        └── RemindersSection.jsx
+    ├── sections
+    │   ├── AssistantSection.jsx
+    │   ├── OverviewSection.jsx
+    │   ├── PlansSection.jsx
+    │   └── RemindersSection.jsx
+    └── utils
+        └── storage.js
 ```
